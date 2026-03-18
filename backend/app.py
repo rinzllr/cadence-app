@@ -7,7 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Habit
-from schemas import HabitCreate, HabitUpdate, HabitResponse
+from schemas import HabitCreate, HabitUpdate, HabitResponse, ReminderInstanceCreate, ReminderInstanceResponse
+from models import Habit, ReminderInstance
+from datetime import date
+from typing import Optional
 import models
 
 # Create tables
@@ -92,3 +95,57 @@ def delete_habit(habit_id: int, db: Session = Depends(get_db)):
     db.delete(db_habit)
     db.commit()
     return {"message": "Habit deleted successfully"}
+
+# Reminder Instance endpoints
+
+@app.post("/reminders", response_model=ReminderInstanceResponse)
+def create_reminder(reminder: ReminderInstanceCreate, db: Session = Depends(get_db)):
+    """Create a reminder instance"""
+    db_reminder = ReminderInstance(**reminder.dict())
+    db.add(db_reminder)
+    db.commit()
+    db.refresh(db_reminder)
+    return db_reminder
+
+@app.get("/reminders/today", response_model=list[ReminderInstanceResponse])
+def get_today_reminders(db: Session = Depends(get_db)):
+    """Get today's reminders"""
+    from datetime import date
+    today = date.today()
+    reminders = db.query(ReminderInstance).filter(
+        ReminderInstance.scheduled_date == today,
+        ReminderInstance.status == "pending"
+    ).all()
+    return reminders
+
+@app.put("/reminders/{reminder_id}/complete", response_model=ReminderInstanceResponse)
+def mark_reminder_complete(reminder_id: int, feedback: Optional[str] = None, db: Session = Depends(get_db)):
+    """Mark reminder as completed"""
+    from datetime import datetime
+    db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
+    if not db_reminder:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    
+    db_reminder.status = "completed"
+    db_reminder.completed_date = datetime.now()
+    if feedback:
+        db_reminder.feedback_text = feedback
+    
+    db.add(db_reminder)
+    db.commit()
+    db.refresh(db_reminder)
+    return db_reminder
+
+@app.put("/reminders/{reminder_id}/skip", response_model=ReminderInstanceResponse)
+def mark_reminder_skip(reminder_id: int, db: Session = Depends(get_db)):
+    """Mark reminder as skipped"""
+    db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
+    if not db_reminder:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    
+    db_reminder.status = "skipped"
+    
+    db.add(db_reminder)
+    db.commit()
+    db.refresh(db_reminder)
+    return db_reminder

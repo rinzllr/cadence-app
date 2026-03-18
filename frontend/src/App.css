@@ -36,3 +36,26 @@
     transform: rotate(360deg);
   }
 }
+
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ccc;
+  margin: 10px 0;
+}
+
+li div:first-child {
+  flex: 1;
+}
+
+li div:last-child {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 5px 10px;
+  cursor: pointer;
+}

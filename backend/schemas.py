@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from datetime import date
 
 class HabitCreate(BaseModel):
     name: str
@@ -36,6 +37,23 @@ class HabitResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ReminderInstanceCreate(BaseModel):
+    habit_id: int
+    scheduled_date: date
+    feedback_text: Optional[str] = None
+
+class ReminderInstanceResponse(BaseModel):
+    id: int
+    habit_id: int
+    scheduled_date: date
+    status: str
+    completed_date: Optional[datetime]
+    feedback_text: Optional[str]
+    created_at: datetime
 
     class Config:
         from_attributes = True
