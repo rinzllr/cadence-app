@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import StatisticsView from './components/StatisticsView';
 
 function Toast({ message, type, onClose }) {
   useEffect(() => {
@@ -20,16 +21,17 @@ function App() {
   const [habits, setHabits] = useState([]);
   const [todayReminders, setTodayReminders] = useState([]);
   const [newHabit, setNewHabit] = useState({
-    name: '',
-    frequency: 'daily',
-    specific_time: '08:00',
-    type: 'basic',
-    track_stats: false
-  });
+  name: '',
+  frequency: 'daily',
+  specific_time: '08:00',
+  type: 'basic',
+  track_stats: false,
+  frequency_config: []
+});
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [selectedHabitId, setSelectedHabitId] = useState(null);
 
-  // Fetch on load
   useEffect(() => {
     fetchHabits();
     fetchTodayReminders();
@@ -73,9 +75,7 @@ function App() {
     try {
       const response = await fetch('http://localhost:8000/habits', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newHabit),
       });
       
@@ -84,27 +84,22 @@ function App() {
       const data = await response.json();
       setHabits([...habits, data]);
       
-      // Create reminder for today
       const today = new Date().toISOString().split('T')[0];
       await fetch('http://localhost:8000/reminders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          habit_id: data.id,
-          scheduled_date: today
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habit_id: data.id}),
       });
       
       fetchTodayReminders();
       setNewHabit({
-        name: '',
-        frequency: 'daily',
-        specific_time: '08:00',
-        type: 'basic',
-        track_stats: false
-      });
+  name: '',
+  frequency: 'daily',
+  specific_time: '08:00',
+  type: 'basic',
+  track_stats: false,
+  frequency_config: []
+});
       
       showToast(`Habit "${data.name}" created! 🎉`, 'success');
     } catch (error) {
@@ -117,9 +112,7 @@ function App() {
     try {
       await fetch(`http://localhost:8000/reminders/${reminderId}/complete`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       fetchTodayReminders();
       showToast(`"${habitName}" completed! ✨`, 'success');
@@ -133,9 +126,7 @@ function App() {
     try {
       await fetch(`http://localhost:8000/reminders/${reminderId}/skip`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       fetchTodayReminders();
       showToast(`"${habitName}" skipped`, 'success');
@@ -161,6 +152,17 @@ function App() {
       showToast('Failed to delete habit', 'error');
     }
   };
+
+  if (selectedHabitId) {
+    const habit = habits.find(h => h.id === selectedHabitId);
+    return (
+      <StatisticsView
+        habit={habit}
+        onBack={() => setSelectedHabitId(null)}
+        onHome={() => setSelectedHabitId(null)}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -207,7 +209,6 @@ function App() {
                       onClick={() => markComplete(reminder.id, habit?.name)}
                       className="btn-success"
                       aria-label={`Mark ${habit?.name} as complete`}
-                      title="Mark as complete"
                     >
                       ✓ Done
                     </button>
@@ -215,7 +216,6 @@ function App() {
                       onClick={() => markSkip(reminder.id, habit?.name)}
                       className="btn-danger"
                       aria-label={`Skip ${habit?.name}`}
-                      title="Skip this habit"
                     >
                       ✗ Skip
                     </button>
@@ -244,43 +244,69 @@ function App() {
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="frequency">Frequency</label>
-              <select
-                id="frequency"
-                value={newHabit.frequency}
-                onChange={(e) => setNewHabit({...newHabit, frequency: e.target.value})}
-                aria-label="Select frequency"
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
+  <div className="form-group">
+    <label htmlFor="frequency">Frequency</label>
+    <select
+      id="frequency"
+      value={newHabit.frequency}
+      onChange={(e) => setNewHabit({...newHabit, frequency: e.target.value})}
+    >
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    </select>
+  </div>
 
-            <div className="form-group">
-              <label htmlFor="time">Time</label>
-              <input
-                id="time"
-                type="time"
-                value={newHabit.specific_time}
-                onChange={(e) => setNewHabit({...newHabit, specific_time: e.target.value})}
-                aria-label="Select time"
-              />
-            </div>
-          </div>
+  <div className="form-group">
+    <label htmlFor="time">Time</label>
+    <input
+      id="time"
+      type="time"
+      value={newHabit.specific_time}
+      onChange={(e) => setNewHabit({...newHabit, specific_time: e.target.value})}
+    />
+  </div>
+</div>
 
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={newHabit.track_stats}
-              onChange={(e) => setNewHabit({...newHabit, track_stats: e.target.checked})}
-              aria-label="Enable statistics tracking"
-            />
-            <span>Track Statistics</span>
-          </label>
+{newHabit.frequency === 'weekly' && (
+  <div className="form-group">
+    <label>Days of Week</label>
+    <div className="days-selector">
+      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, idx) => (
+        <label key={day} className="day-checkbox">
+          <input
+            type="checkbox"
+            checked={newHabit.frequency_config?.includes(day) || false}
+            onChange={(e) => {
+              const days = newHabit.frequency_config || [];
+              if (e.target.checked) {
+                setNewHabit({...newHabit, frequency_config: [...days, day]});
+              } else {
+                setNewHabit({...newHabit, frequency_config: days.filter(d => d !== day)});
+              }
+            }}
+          />
+          <span>{day.slice(0, 3)}</span>
+        </label>
+      ))}
+    </div>
+  </div>
+)}
 
-          <button type="submit" className="btn-primary" aria-label="Create habit">
+<label className="checkbox-label">
+  <input
+    type="checkbox"
+    checked={newHabit.track_stats}
+    onChange={(e) => setNewHabit({
+      ...newHabit, 
+      track_stats: e.target.checked,
+      type: e.target.checked ? 'smart' : 'basic'
+    })}
+  />
+  <span>Track Statistics</span>
+</label>
+
+          <button type="submit" className="btn-primary">
             Create Habit
           </button>
         </form>
@@ -298,9 +324,9 @@ function App() {
                   <strong>{habit.name}</strong>
                   <div className="habit-meta">
                     <span className="badge">
-                      {habit.type === 'smart' ? '🧠 Smart' : '📌 Basic'}
+                      {habit.type === 'smart' ? 'Smart' : 'Basic'}
                     </span>
-                    <span className="frequency">{habit.frequency}</span>
+                    <span className="frequency">{habit.frequency.charAt(0).toUpperCase() + habit.frequency.slice(1)}</span>
                     {habit.track_stats && <span className="badge stats">📊 Tracked</span>}
                     {habit.is_active ? (
                       <span className="badge active">● Active</span>
@@ -309,14 +335,24 @@ function App() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => deleteHabit(habit.id, habit.name)}
-                  className="btn-danger"
-                  aria-label={`Delete ${habit.name}`}
-                  title="Delete habit"
-                >
-                  🗑️ Delete
-                </button>
+                <div className="habit-actions">
+                  {habit.track_stats && (
+                    <button
+                      onClick={() => setSelectedHabitId(habit.id)}
+                      className="btn-secondary"
+                      aria-label={`View statistics for ${habit.name}`}
+                    >
+                      📊 Stats
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteHabit(habit.id, habit.name)}
+                    className="btn-danger"
+                    aria-label={`Delete ${habit.name}`}
+                  >
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

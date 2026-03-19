@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'services'))
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +13,7 @@ from models import Habit, ReminderInstance
 from datetime import date
 from typing import Optional
 import models
+from stats_service import StatsService
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -23,7 +25,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -87,11 +89,15 @@ def update_habit(habit_id: int, habit: HabitUpdate, db: Session = Depends(get_db
 
 @app.delete("/habits/{habit_id}")
 def delete_habit(habit_id: int, db: Session = Depends(get_db)):
-    """Delete a habit"""
+    """Delete a habit and all its reminders"""
     db_habit = db.query(Habit).filter(Habit.id == habit_id).first()
     if not db_habit:
         raise HTTPException(status_code=404, detail="Habit not found")
     
+    # Delete all reminders for this habit first
+    db.query(ReminderInstance).filter(ReminderInstance.habit_id == habit_id).delete()
+    
+    # Then delete the habit
     db.delete(db_habit)
     db.commit()
     return {"message": "Habit deleted successfully"}
@@ -145,6 +151,38 @@ def mark_reminder_skip(reminder_id: int, db: Session = Depends(get_db)):
     
     db_reminder.status = "skipped"
     
+    db.add(db_reminder)
+    db.commit()
+    db.refresh(db_reminder)
+    return db_reminder
+
+# Statistics endpoints
+
+@app.get("/stats/habit/{habit_id}")
+def get_habit_statistics(habit_id: int, timeframe: str = "weekly", db: Session = Depends(get_db)):
+    """
+    Get statistics for a specific habit.
+    
+    Query params:
+    - timeframe: 'weekly', 'monthly', 'quarterly', 'yearly' (default: weekly)
+    
+    Example: GET /stats/habit/1?timeframe=monthly
+    """
+    stats = StatsService.get_habit_stats(habit_id, timeframe, db)
+    if not stats:
+        raise HTTPException(status_code=404, detail="Habit not found")
+    return stats
+
+
+@app.post("/reminders", response_model=ReminderInstanceResponse)
+def create_reminder(reminder: ReminderInstanceCreate, db: Session = Depends(get_db)):
+    """Create a reminder instance"""
+    # If no scheduled_date provided, use today on server
+    if not reminder.scheduled_date:
+        from datetime import date
+        reminder.scheduled_date = date.today()
+    
+    db_reminder = ReminderInstance(**reminder.dict())
     db.add(db_reminder)
     db.commit()
     db.refresh(db_reminder)

@@ -599,3 +599,65 @@ button:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Habit actions container */
+.habit-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Day selector */
+.days-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 8px;
+}
+
+.day-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.day-checkbox:hover {
+  background: var(--border-color);
+}
+
+.day-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.day-checkbox input[type="checkbox"]:checked + span {
+  color: var(--accent-green);
+  font-weight: 700;
+}
