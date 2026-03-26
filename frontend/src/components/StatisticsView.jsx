@@ -7,8 +7,8 @@ function StatisticsView({ habit, onBack, onHome }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
-  }, [timeframe]);
+  fetchStats();
+}, [timeframe, fetchStats]);
 
   const fetchStats = async () => {
     setLoading(true);

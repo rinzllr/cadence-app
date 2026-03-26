@@ -52,7 +52,7 @@ function App() {
       showToast('Failed to load habits', 'error');
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   const fetchTodayReminders = useCallback(async () => {
     try {
@@ -98,13 +98,13 @@ function App() {
       fetchTodayReminders();
       setNewHabit({
         name: '',
-  frequency: 'daily',
-  specific_time: '08:00',
-  type: 'basic',
-  track_stats: false,
-  frequency_config: [],
-  prompt_for_feedback: false
-});
+        frequency: 'daily',
+        specific_time: '08:00',
+        type: 'basic',
+        track_stats: false,
+        frequency_config: [],
+        prompt_for_feedback: false
+      });
       
       showToast(`Habit "${data.name}" created! 🎉`, 'success');
     } catch (error) {
@@ -114,21 +114,20 @@ function App() {
   };
 
   const markComplete = async (reminderId, habitName, feedback = null) => {
-  try {
-    const body = feedback ? JSON.stringify({ feedback_text: feedback }) : JSON.stringify({});
-    console.log('Sending body:', body);
-    await fetch(`http://localhost:8000/reminders/${reminderId}/complete`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: body,
-    });
-    fetchTodayReminders();
-    showToast(`"${habitName}" completed! ✨`, 'success');
-  } catch (error) {
-    console.error('Error marking complete:', error);
-    showToast('Failed to mark complete', 'error');
-  }
-};
+    try {
+      const body = feedback ? JSON.stringify({ feedback_text: feedback }) : JSON.stringify({});
+      await fetch(`http://localhost:8000/reminders/${reminderId}/complete`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: body,
+      });
+      fetchTodayReminders();
+      showToast(`"${habitName}" completed! ✨`, 'success');
+    } catch (error) {
+      console.error('Error marking complete:', error);
+      showToast('Failed to mark complete', 'error');
+    }
+  };
 
   const markSkip = async (reminderId, habitName) => {
     try {
@@ -162,42 +161,42 @@ function App() {
   };
 
   const togglePauseHabit = async (id, habitName, isActive) => {
-  try {
-    await fetch(`http://localhost:8000/habits/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_active: !isActive }),
-    });
-    await fetchHabits();
-    const action = isActive ? 'paused' : 'resumed';
-    showToast(`"${habitName}" ${action}`, 'success');
-  } catch (error) {
-    console.error('Error toggling pause:', error);
-    showToast('Failed to update habit', 'error');
-  }
-};
+    try {
+      await fetch(`http://localhost:8000/habits/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !isActive }),
+      });
+      await fetchHabits();
+      const action = isActive ? 'paused' : 'resumed';
+      showToast(`"${habitName}" ${action}`, 'success');
+    } catch (error) {
+      console.error('Error toggling pause:', error);
+      showToast('Failed to update habit', 'error');
+    }
+  };
 
   if (selectedHabitId) {
-  const habit = habits.find(h => h.id === selectedHabitId);
-  return (
-    <StatisticsView
-      habit={habit}
-      onBack={() => setSelectedHabitId(null)}
-      onHome={() => setSelectedHabitId(null)}
-    />
-  );
-}
+    const habit = habits.find(h => h.id === selectedHabitId);
+    return (
+      <StatisticsView
+        habit={habit}
+        onBack={() => setSelectedHabitId(null)}
+        onHome={() => setSelectedHabitId(null)}
+      />
+    );
+  }
 
-if (viewingFeedbackHabitId) {
-  const habit = habits.find(h => h.id === viewingFeedbackHabitId);
-  return (
-    <FeedbackView
-      habit={habit}
-      onBack={() => setViewingFeedbackHabitId(null)}
-      onHome={() => setViewingFeedbackHabitId(null)}
-    />
-  );
-}
+  if (viewingFeedbackHabitId) {
+    const habit = habits.find(h => h.id === viewingFeedbackHabitId);
+    return (
+      <FeedbackView
+        habit={habit}
+        onBack={() => setViewingFeedbackHabitId(null)}
+        onHome={() => setViewingFeedbackHabitId(null)}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -229,88 +228,84 @@ if (viewingFeedbackHabitId) {
         ) : (
           <ul>
             {todayReminders.map((reminder) => {
-  const habit = habits.find(h => h.id === reminder.habit_id);
-  const showingFeedback = feedbackReminderId === reminder.id;
-  
-  return (
-    <li key={reminder.id} className="reminder-item">
-      <div className="reminder-content">
-        <strong>{habit?.name}</strong>
-        <div className="reminder-meta">
-          <span className="time">⏱️ {habit?.specific_time}</span>
-          <span className="frequency">{habit?.frequency}</span>
-        </div>
-      </div>
-      
-      {showingFeedback && habit?.prompt_for_feedback && (
-        <div className="feedback-input-container">
-          <textarea
-  placeholder="Add a note (optional)..."
-  value={feedbackText}
-  onChange={(e) => {
-    console.log('Textarea changed:', e.target.value);
-    setFeedbackText(e.target.value);
-  }}
-  className="feedback-input"
-  rows="3"
-/>
-        </div>
-      )}
-      
-      <div className="reminder-actions">
-        {showingFeedback && habit?.prompt_for_feedback ? (
-          <>
-            <button
-  onClick={() => {
-    console.log('Confirm clicked, feedbackText:', feedbackText);
-    markComplete(reminder.id, habit?.name, feedbackText);
-    setFeedbackReminderId(null);
-    setFeedbackText('');
-  }}
-  className="btn-success"
-  aria-label={`Confirm ${habit?.name} as complete`}
->
-  ✓ Confirm
-</button>
-            <button
-              onClick={() => {
-                setFeedbackReminderId(null);
-                setFeedbackText('');
-              }}
-              className="btn-secondary"
-              aria-label="Cancel"
-            >
-              ✗ Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => {
-                if (habit?.prompt_for_feedback) {
-                  setFeedbackReminderId(reminder.id);
-                } else {
-                  markComplete(reminder.id, habit?.name);
-                }
-              }}
-              className="btn-success"
-              aria-label={`Mark ${habit?.name} as complete`}
-            >
-              ✓ Done
-            </button>
-            <button
-              onClick={() => markSkip(reminder.id, habit?.name)}
-              className="btn-danger"
-              aria-label={`Skip ${habit?.name}`}
-            >
-              ✗ Skip
-            </button>
-          </>
-        )}
-      </div>
-    </li>
-  );
-})}
+              const habit = habits.find(h => h.id === reminder.habit_id);
+              const showingFeedback = feedbackReminderId === reminder.id;
+              
+              return (
+                <li key={reminder.id} className="reminder-item">
+                  <div className="reminder-content">
+                    <strong>{habit?.name}</strong>
+                    <div className="reminder-meta">
+                      <span className="time">⏱️ {habit?.specific_time}</span>
+                      <span className="frequency">{habit?.frequency}</span>
+                    </div>
+                  </div>
+                  
+                  {showingFeedback && habit?.prompt_for_feedback && (
+                    <div className="feedback-input-container">
+                      <textarea
+                        placeholder="Add a note (optional)..."
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                        className="feedback-input"
+                        rows="3"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="reminder-actions">
+                    {showingFeedback && habit?.prompt_for_feedback ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            markComplete(reminder.id, habit?.name, feedbackText);
+                            setFeedbackReminderId(null);
+                            setFeedbackText('');
+                          }}
+                          className="btn-success"
+                          aria-label={`Confirm ${habit?.name} as complete`}
+                        >
+                          ✓ Confirm
+                        </button>
+                        <button
+                          onClick={() => {
+                            setFeedbackReminderId(null);
+                            setFeedbackText('');
+                          }}
+                          className="btn-secondary"
+                          aria-label="Cancel"
+                        >
+                          ✗ Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            if (habit?.prompt_for_feedback) {
+                              setFeedbackReminderId(reminder.id);
+                            } else {
+                              markComplete(reminder.id, habit?.name);
+                            }
+                          }}
+                          className="btn-success"
+                          aria-label={`Mark ${habit?.name} as complete`}
+                        >
+                          ✓ Done
+                        </button>
+                        <button
+                          onClick={() => markSkip(reminder.id, habit?.name)}
+                          className="btn-danger"
+                          aria-label={`Skip ${habit?.name}`}
+                        >
+                          ✗ Skip
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -395,13 +390,13 @@ if (viewingFeedbackHabitId) {
           </label>
 
           <label className="checkbox-label">
-  <input
-    type="checkbox"
-    checked={newHabit.prompt_for_feedback}
-    onChange={(e) => setNewHabit({...newHabit, prompt_for_feedback: e.target.checked})}
-  />
-  <span>Prompt for Feedback</span>
-</label>
+            <input
+              type="checkbox"
+              checked={newHabit.prompt_for_feedback}
+              onChange={(e) => setNewHabit({...newHabit, prompt_for_feedback: e.target.checked})}
+            />
+            <span>Prompt for Feedback</span>
+          </label>
 
           <button type="submit" className="btn-primary">
             Create Habit
@@ -442,14 +437,14 @@ if (viewingFeedbackHabitId) {
                           </button>
                         )}
                         {habit.prompt_for_feedback && (
-    <button
-      onClick={() => setViewingFeedbackHabitId(habit.id)}
-      className="btn-secondary"
-      aria-label={`View feedback for ${habit.name}`}
-    >
-      📝 Feedback
-    </button>
-  )} 
+                          <button
+                            onClick={() => setViewingFeedbackHabitId(habit.id)}
+                            className="btn-secondary"
+                            aria-label={`View feedback for ${habit.name}`}
+                          >
+                            📝 Feedback
+                          </button>
+                        )}
                         <button
                           onClick={() => togglePauseHabit(habit.id, habit.name, habit.is_active)}
                           className="btn-secondary"
