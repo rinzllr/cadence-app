@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
-from datetime import date
+from datetime import datetime, date
 
 class FeedbackRequest(BaseModel):
     feedback_text: Optional[str] = None
@@ -9,9 +8,9 @@ class FeedbackRequest(BaseModel):
 class HabitCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    type: str = "basic"  # "basic" or "smart"
-    frequency: str  # "daily", "weekly", "monthly", etc
-    specific_time: Optional[str] = None  # "08:00"
+    type: str = "basic"
+    frequency: str
+    specific_time: Optional[str] = None
     track_stats: bool = False
     push_notification_enabled: bool = False
     location: Optional[str] = None
@@ -43,23 +42,6 @@ class HabitResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     prompt_for_feedback: bool
-
-    class Config:
-        from_attributes = True
-
-class ReminderInstanceCreate(BaseModel):
-    habit_id: int
-    scheduled_date: date
-    feedback_text: Optional[str] = None
-
-class ReminderInstanceResponse(BaseModel):
-    id: int
-    habit_id: int
-    scheduled_date: date
-    status: str
-    completed_date: Optional[datetime]
-    feedback_text: Optional[str]
-    created_at: datetime
 
     class Config:
         from_attributes = True

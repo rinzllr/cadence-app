@@ -7,9 +7,8 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-from models import Habit
-from schemas import HabitCreate, HabitUpdate, HabitResponse, ReminderInstanceCreate, ReminderInstanceResponse, FeedbackRequest
 from models import Habit, ReminderInstance
+from schemas import HabitCreate, HabitUpdate, HabitResponse, ReminderInstanceCreate, ReminderInstanceResponse, FeedbackRequest
 from datetime import date
 from typing import Optional
 import models
@@ -132,7 +131,6 @@ def get_today_reminders(db: Session = Depends(get_db)):
 def mark_reminder_complete(reminder_id: int, feedback_text: Optional[str] = None, db: Session = Depends(get_db)):
     """Mark reminder as completed"""
     from datetime import datetime
-    print(f"DEBUG: feedback_text = {feedback_text}")  # Add this line
     
     db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
     if not db_reminder:
