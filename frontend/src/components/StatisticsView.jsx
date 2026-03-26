@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/StatisticsView.css';
 
 function StatisticsView({ habit, onBack, onHome }) {
@@ -6,15 +6,12 @@ function StatisticsView({ habit, onBack, onHome }) {
   const [timeframe, setTimeframe] = useState('weekly');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-  fetchStats();
-}, [timeframe, fetchStats]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       const response = await fetch(
-        `http://localhost:8000/stats/habit/${habit.id}?timeframe=${timeframe}`
+        `${API_URL}/stats/habit/${habit.id}?timeframe=${timeframe}`
       );
       const data = await response.json();
       setStats(data);
@@ -23,7 +20,11 @@ function StatisticsView({ habit, onBack, onHome }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [habit.id, timeframe]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   if (loading) {
     return (

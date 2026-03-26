@@ -37,13 +37,14 @@ function App() {
   const [feedbackReminderId, setFeedbackReminderId] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
 
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
-  };
+  }, []);
 
   const fetchHabits = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8000/habits');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/habits`);
       const data = await response.json();
       setHabits(data);
       setLoading(false);
@@ -56,7 +57,8 @@ function App() {
 
   const fetchTodayReminders = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8000/reminders/today');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/reminders/today`);
       const data = await response.json();
       setTodayReminders(data);
     } catch (error) {
@@ -70,31 +72,16 @@ function App() {
   }, [fetchHabits, fetchTodayReminders]);
 
   const createHabit = async (e) => {
-  e.preventDefault();
-  
-  // Validation
-  if (!newHabit.name.trim()) {
-    showToast('Habit name is required', 'error');
-    return;
-  }
-  
-  if (newHabit.name.trim().length < 2) {
-    showToast('Habit name must be at least 2 characters', 'error');
-    return;
-  }
-  
-  if (newHabit.name.trim().length > 100) {
-    showToast('Habit name must be less than 100 characters', 'error');
-    return;
-  }
-  
-  if (newHabit.frequency === 'weekly' && (!newHabit.frequency_config || newHabit.frequency_config.length === 0)) {
-    showToast('Please select at least one day for weekly habits', 'error');
-    return;
-  }
+    e.preventDefault();
+    
+    if (!newHabit.name.trim()) {
+      showToast('Habit name is required', 'error');
+      return;
+    }
 
     try {
-      const response = await fetch('http://localhost:8000/habits', {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/habits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newHabit),
@@ -105,7 +92,7 @@ function App() {
       const data = await response.json();
       setHabits([...habits, data]);
 
-      await fetch('http://localhost:8000/reminders', {
+      await fetch(`${API_URL}/reminders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ habit_id: data.id }),
@@ -131,8 +118,9 @@ function App() {
 
   const markComplete = async (reminderId, habitName, feedback = null) => {
     try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       const body = feedback ? JSON.stringify({ feedback_text: feedback }) : JSON.stringify({});
-      await fetch(`http://localhost:8000/reminders/${reminderId}/complete`, {
+      await fetch(`${API_URL}/reminders/${reminderId}/complete`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: body,
@@ -147,7 +135,8 @@ function App() {
 
   const markSkip = async (reminderId, habitName) => {
     try {
-      await fetch(`http://localhost:8000/reminders/${reminderId}/skip`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      await fetch(`${API_URL}/reminders/${reminderId}/skip`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -165,7 +154,8 @@ function App() {
     }
 
     try {
-      await fetch(`http://localhost:8000/habits/${id}`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      await fetch(`${API_URL}/habits/${id}`, {
         method: 'DELETE',
       });
       setHabits(habits.filter(habit => habit.id !== id));
@@ -178,7 +168,8 @@ function App() {
 
   const togglePauseHabit = async (id, habitName, isActive) => {
     try {
-      await fetch(`http://localhost:8000/habits/${id}`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      await fetch(`${API_URL}/habits/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !isActive }),
