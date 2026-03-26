@@ -70,12 +70,28 @@ function App() {
   }, [fetchHabits, fetchTodayReminders]);
 
   const createHabit = async (e) => {
-    e.preventDefault();
-    
-    if (!newHabit.name.trim()) {
-      showToast('Habit name is required', 'error');
-      return;
-    }
+  e.preventDefault();
+  
+  // Validation
+  if (!newHabit.name.trim()) {
+    showToast('Habit name is required', 'error');
+    return;
+  }
+  
+  if (newHabit.name.trim().length < 2) {
+    showToast('Habit name must be at least 2 characters', 'error');
+    return;
+  }
+  
+  if (newHabit.name.trim().length > 100) {
+    showToast('Habit name must be less than 100 characters', 'error');
+    return;
+  }
+  
+  if (newHabit.frequency === 'weekly' && (!newHabit.frequency_config || newHabit.frequency_config.length === 0)) {
+    showToast('Please select at least one day for weekly habits', 'error');
+    return;
+  }
 
     try {
       const response = await fetch('http://localhost:8000/habits', {

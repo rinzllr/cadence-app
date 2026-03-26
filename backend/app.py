@@ -50,11 +50,15 @@ def health_check():
 @app.post("/habits", response_model=HabitResponse)
 def create_habit(habit: HabitCreate, db: Session = Depends(get_db)):
     """Create a new habit"""
-    db_habit = Habit(**habit.dict())
-    db.add(db_habit)
-    db.commit()
-    db.refresh(db_habit)
-    return db_habit
+    try:
+        db_habit = Habit(**habit.dict())
+        db.add(db_habit)
+        db.commit()
+        db.refresh(db_habit)
+        return db_habit
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to create habit: {str(e)}")
 
 @app.get("/habits", response_model=list[HabitResponse])
 def get_habits(db: Session = Depends(get_db)):
@@ -73,18 +77,24 @@ def get_habit(habit_id: int, db: Session = Depends(get_db)):
 @app.put("/habits/{habit_id}", response_model=HabitResponse)
 def update_habit(habit_id: int, habit: HabitUpdate, db: Session = Depends(get_db)):
     """Update a habit"""
-    db_habit = db.query(Habit).filter(Habit.id == habit_id).first()
-    if not db_habit:
-        raise HTTPException(status_code=404, detail="Habit not found")
-    
-    update_data = habit.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_habit, key, value)
-    
-    db.add(db_habit)
-    db.commit()
-    db.refresh(db_habit)
-    return db_habit
+    try:
+        db_habit = db.query(Habit).filter(Habit.id == habit_id).first()
+        if not db_habit:
+            raise HTTPException(status_code=404, detail="Habit not found")
+        
+        update_data = habit.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_habit, key, value)
+        
+        db.add(db_habit)
+        db.commit()
+        db.refresh(db_habit)
+        return db_habit
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to update habit: {str(e)}")
 
 @app.delete("/habits/{habit_id}")
 def delete_habit(habit_id: int, db: Session = Depends(get_db)):
@@ -106,15 +116,26 @@ def delete_habit(habit_id: int, db: Session = Depends(get_db)):
 @app.post("/reminders", response_model=ReminderInstanceResponse)
 def create_reminder(reminder: ReminderInstanceCreate, db: Session = Depends(get_db)):
     """Create a reminder instance"""
-    if not reminder.scheduled_date:
-        from datetime import date
-        reminder.scheduled_date = date.today()
-    
-    db_reminder = ReminderInstance(**reminder.dict())
-    db.add(db_reminder)
-    db.commit()
-    db.refresh(db_reminder)
-    return db_reminder
+    try:
+        # Validate habit exists
+        habit = db.query(Habit).filter(Habit.id == reminder.habit_id).first()
+        if not habit:
+            raise HTTPException(status_code=404, detail="Habit not found")
+        
+        if not reminder.scheduled_date:
+            from datetime import date
+            reminder.scheduled_date = date.today()
+        
+        db_reminder = ReminderInstance(**reminder.dict())
+        db.add(db_reminder)
+        db.commit()
+        db.refresh(db_reminder)
+        return db_reminder
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to create reminder: {str(e)}")
 
 @app.get("/reminders/today", response_model=list[ReminderInstanceResponse])
 def get_today_reminders(db: Session = Depends(get_db)):
@@ -130,35 +151,49 @@ def get_today_reminders(db: Session = Depends(get_db)):
 @app.put("/reminders/{reminder_id}/complete", response_model=ReminderInstanceResponse)
 def mark_reminder_complete(reminder_id: int, feedback_text: Optional[str] = None, db: Session = Depends(get_db)):
     """Mark reminder as completed"""
-    from datetime import datetime
-    
-    db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
-    if not db_reminder:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    
-    db_reminder.status = "completed"
-    db_reminder.completed_date = datetime.now()
-    if feedback_text:
-        db_reminder.feedback_text = feedback_text
-    
-    db.add(db_reminder)
-    db.commit()
-    db.refresh(db_reminder)
-    return db_reminder
+    try:
+        from datetime import datetime
+        
+        db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
+        if not db_reminder:
+            raise HTTPException(status_code=404, detail="Reminder not found")
+        
+        db_reminder.status = "completed"
+        db_reminder.completed_date = datetime.now()
+        if feedback_text:
+            if len(feedback_text.strip()) > 5000:
+                raise HTTPException(status_code=400, detail="Feedback must be less than 5000 characters")
+            db_reminder.feedback_text = feedback_text
+        
+        db.add(db_reminder)
+        db.commit()
+        db.refresh(db_reminder)
+        return db_reminder
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to mark reminder complete: {str(e)}")
 
 @app.put("/reminders/{reminder_id}/skip", response_model=ReminderInstanceResponse)
 def mark_reminder_skip(reminder_id: int, db: Session = Depends(get_db)):
     """Mark reminder as skipped"""
-    db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
-    if not db_reminder:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    
-    db_reminder.status = "skipped"
-    
-    db.add(db_reminder)
-    db.commit()
-    db.refresh(db_reminder)
-    return db_reminder
+    try:
+        db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
+        if not db_reminder:
+            raise HTTPException(status_code=404, detail="Reminder not found")
+        
+        db_reminder.status = "skipped"
+        
+        db.add(db_reminder)
+        db.commit()
+        db.refresh(db_reminder)
+        return db_reminder
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to mark reminder skipped: {str(e)}")
 
 # Statistics endpoints
 

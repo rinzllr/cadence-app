@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from typing import Optional
 from datetime import datetime, date
 
@@ -6,27 +6,58 @@ class FeedbackRequest(BaseModel):
     feedback_text: Optional[str] = None
 
 class HabitCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    type: str = "basic"
-    frequency: str
+    name: str = Field(..., min_length=2, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    type: str = Field("basic", pattern="^(basic|smart)$")
+    frequency: str = Field(..., pattern="^(daily|weekly|monthly)$")
     specific_time: Optional[str] = None
     track_stats: bool = False
     push_notification_enabled: bool = False
-    location: Optional[str] = None
+    location: Optional[str] = Field(None, max_length=255)
     prompt_for_feedback: bool = False
+    
+    @validator('specific_time')
+    def validate_time(cls, v):
+        if v is not None:
+            # Check format HH:MM
+            if not isinstance(v, str) or len(v) != 5 or v[2] != ':':
+                raise ValueError('Time must be in HH:MM format')
+            try:
+                hours, minutes = v.split(':')
+                h = int(hours)
+                m = int(minutes)
+                if not (0 <= h <= 23 and 0 <= m <= 59):
+                    raise ValueError('Invalid time values')
+            except (ValueError, AttributeError):
+                raise ValueError('Time must be in HH:MM format')
+        return v
 
 class HabitUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    type: Optional[str] = None
-    frequency: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    type: Optional[str] = Field(None, pattern="^(basic|smart)$")
+    frequency: Optional[str] = Field(None, pattern="^(daily|weekly|monthly)$")
     specific_time: Optional[str] = None
     track_stats: Optional[bool] = None
     push_notification_enabled: Optional[bool] = None
-    location: Optional[str] = None
+    location: Optional[str] = Field(None, max_length=255)
     is_active: Optional[bool] = None
     prompt_for_feedback: Optional[bool] = None
+    
+    @validator('specific_time')
+    def validate_time(cls, v):
+        if v is not None:
+            if not isinstance(v, str) or len(v) != 5 or v[2] != ':':
+                raise ValueError('Time must be in HH:MM format')
+            try:
+                hours, minutes = v.split(':')
+                h = int(hours)
+                m = int(minutes)
+                if not (0 <= h <= 23 and 0 <= m <= 59):
+                    raise ValueError('Invalid time values')
+            except (ValueError, AttributeError):
+                raise ValueError('Time must be in HH:MM format')
+        return v
 
 class HabitResponse(BaseModel):
     id: int
