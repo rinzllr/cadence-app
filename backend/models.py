@@ -13,6 +13,7 @@ class Habit(Base):
     frequency = Column(String(50), nullable=False)  # "daily", "weekly", etc
     specific_time = Column(String(5), nullable=True)  # "08:00" format
     track_stats = Column(Boolean, default=False)
+    prompt_for_feedback = Column(Boolean, default=False)
     push_notification_enabled = Column(Boolean, default=False)
     location = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)

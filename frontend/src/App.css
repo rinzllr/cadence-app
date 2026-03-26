@@ -661,3 +661,68 @@ button:focus-visible {
   color: var(--accent-green);
   font-weight: 700;
 }
+
+/* Warning button */
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.btn-warning:active {
+  transform: translateY(0);
+}
+
+.habits-category {
+  margin-bottom: 32px;
+}
+
+.habits-category h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+/* Feedback input */
+.feedback-input-container {
+  margin: 12px 0;
+  width: 100%;
+}
+
+.feedback-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: 'Inter', inherit;
+  font-weight: 500;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.feedback-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.feedback-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px rgba(249, 115, 22, 0.3);
+}
+
+textarea.feedback-input {
+  resize: vertical;
+  min-height: 80px;
+  font-family: 'Inter', inherit;
+}

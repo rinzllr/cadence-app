@@ -3,6 +3,9 @@ from typing import Optional
 from datetime import datetime
 from datetime import date
 
+class FeedbackRequest(BaseModel):
+    feedback_text: Optional[str] = None
+
 class HabitCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -12,6 +15,7 @@ class HabitCreate(BaseModel):
     track_stats: bool = False
     push_notification_enabled: bool = False
     location: Optional[str] = None
+    prompt_for_feedback: bool = False
 
 class HabitUpdate(BaseModel):
     name: Optional[str] = None
@@ -23,6 +27,7 @@ class HabitUpdate(BaseModel):
     push_notification_enabled: Optional[bool] = None
     location: Optional[str] = None
     is_active: Optional[bool] = None
+    prompt_for_feedback: Optional[bool] = None
 
 class HabitResponse(BaseModel):
     id: int
@@ -37,6 +42,7 @@ class HabitResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    prompt_for_feedback: bool
 
     class Config:
         from_attributes = True
@@ -53,6 +59,22 @@ class ReminderInstanceResponse(BaseModel):
     status: str
     completed_date: Optional[datetime]
     feedback_text: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ReminderInstanceCreate(BaseModel):
+    habit_id: int
+    scheduled_date: Optional[date] = None
+
+class ReminderInstanceResponse(BaseModel):
+    id: int
+    habit_id: int
+    scheduled_date: date
+    status: str
+    completed_date: Optional[datetime] = None
+    feedback_text: Optional[str] = None
     created_at: datetime
 
     class Config:

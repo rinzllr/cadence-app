@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Habit
-from schemas import HabitCreate, HabitUpdate, HabitResponse, ReminderInstanceCreate, ReminderInstanceResponse
+from schemas import HabitCreate, HabitUpdate, HabitResponse, ReminderInstanceCreate, ReminderInstanceResponse, FeedbackRequest
 from models import Habit, ReminderInstance
 from datetime import date
 from typing import Optional
@@ -59,8 +59,8 @@ def create_habit(habit: HabitCreate, db: Session = Depends(get_db)):
 
 @app.get("/habits", response_model=list[HabitResponse])
 def get_habits(db: Session = Depends(get_db)):
-    """Get all habits"""
-    habits = db.query(Habit).filter(Habit.is_active == True).all()
+    """Get all habits (active and paused)"""
+    habits = db.query(Habit).all()
     return habits
 
 @app.get("/habits/{habit_id}", response_model=HabitResponse)
@@ -107,6 +107,10 @@ def delete_habit(habit_id: int, db: Session = Depends(get_db)):
 @app.post("/reminders", response_model=ReminderInstanceResponse)
 def create_reminder(reminder: ReminderInstanceCreate, db: Session = Depends(get_db)):
     """Create a reminder instance"""
+    if not reminder.scheduled_date:
+        from datetime import date
+        reminder.scheduled_date = date.today()
+    
     db_reminder = ReminderInstance(**reminder.dict())
     db.add(db_reminder)
     db.commit()
@@ -125,17 +129,19 @@ def get_today_reminders(db: Session = Depends(get_db)):
     return reminders
 
 @app.put("/reminders/{reminder_id}/complete", response_model=ReminderInstanceResponse)
-def mark_reminder_complete(reminder_id: int, feedback: Optional[str] = None, db: Session = Depends(get_db)):
+def mark_reminder_complete(reminder_id: int, feedback_text: Optional[str] = None, db: Session = Depends(get_db)):
     """Mark reminder as completed"""
     from datetime import datetime
+    print(f"DEBUG: feedback_text = {feedback_text}")  # Add this line
+    
     db_reminder = db.query(ReminderInstance).filter(ReminderInstance.id == reminder_id).first()
     if not db_reminder:
         raise HTTPException(status_code=404, detail="Reminder not found")
     
     db_reminder.status = "completed"
     db_reminder.completed_date = datetime.now()
-    if feedback:
-        db_reminder.feedback_text = feedback
+    if feedback_text:
+        db_reminder.feedback_text = feedback_text
     
     db.add(db_reminder)
     db.commit()
@@ -173,17 +179,14 @@ def get_habit_statistics(habit_id: int, timeframe: str = "weekly", db: Session =
         raise HTTPException(status_code=404, detail="Habit not found")
     return stats
 
+@app.get("/reminders/habit/{habit_id}")
+def get_habit_reminders(habit_id: int, db: Session = Depends(get_db)):
+    """Get all reminders for a habit"""
+    reminders = db.query(ReminderInstance).filter(
+        ReminderInstance.habit_id == habit_id
+    ).all()
+    return reminders
 
-@app.post("/reminders", response_model=ReminderInstanceResponse)
-def create_reminder(reminder: ReminderInstanceCreate, db: Session = Depends(get_db)):
-    """Create a reminder instance"""
-    # If no scheduled_date provided, use today on server
-    if not reminder.scheduled_date:
-        from datetime import date
-        reminder.scheduled_date = date.today()
-    
-    db_reminder = ReminderInstance(**reminder.dict())
-    db.add(db_reminder)
-    db.commit()
-    db.refresh(db_reminder)
-    return db_reminder
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
