@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
+from uuid import UUID
 
 class FeedbackRequest(BaseModel):
     feedback_text: Optional[str] = None
@@ -11,15 +12,15 @@ class HabitCreate(BaseModel):
     type: str = Field("basic", pattern="^(basic|smart)$")
     frequency: str = Field(..., pattern="^(daily|weekly|monthly)$")
     specific_time: Optional[str] = None
+    frequency_config: Optional[List[str]] = []
     track_stats: bool = False
     push_notification_enabled: bool = False
     location: Optional[str] = Field(None, max_length=255)
     prompt_for_feedback: bool = False
-    
+
     @validator('specific_time')
     def validate_time(cls, v):
         if v is not None:
-            # Check format HH:MM
             if not isinstance(v, str) or len(v) != 5 or v[2] != ':':
                 raise ValueError('Time must be in HH:MM format')
             try:
@@ -38,12 +39,13 @@ class HabitUpdate(BaseModel):
     type: Optional[str] = Field(None, pattern="^(basic|smart)$")
     frequency: Optional[str] = Field(None, pattern="^(daily|weekly|monthly)$")
     specific_time: Optional[str] = None
+    frequency_config: Optional[List[str]] = None
     track_stats: Optional[bool] = None
     push_notification_enabled: Optional[bool] = None
     location: Optional[str] = Field(None, max_length=255)
     is_active: Optional[bool] = None
     prompt_for_feedback: Optional[bool] = None
-    
+
     @validator('specific_time')
     def validate_time(cls, v):
         if v is not None:
@@ -61,11 +63,13 @@ class HabitUpdate(BaseModel):
 
 class HabitResponse(BaseModel):
     id: int
+    user_id: UUID
     name: str
     description: Optional[str]
     type: str
     frequency: str
     specific_time: Optional[str]
+    frequency_config: Optional[List[str]]
     track_stats: bool
     push_notification_enabled: bool
     location: Optional[str]

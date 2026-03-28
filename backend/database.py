@@ -21,3 +21,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base for models
 Base = declarative_base()
+
+# Supabase SSL
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"sslmode": "require"}
+)

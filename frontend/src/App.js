@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import StatisticsView from './components/StatisticsView';
 import FeedbackView from './components/FeedbackView';
+import LoginPage from './components/LoginPage';
+import { supabase } from './supabase';
 
 function Toast({ message, type, onClose }) {
   useEffect(() => {
@@ -19,6 +21,7 @@ function Toast({ message, type, onClose }) {
 }
 
 function App() {
+  const [session, setSession] = useState(undefined); // undefined = loading, null = no session
   const [habits, setHabits] = useState([]);
   const [todayReminders, setTodayReminders] = useState([]);
   const [newHabit, setNewHabit] = useState({
@@ -37,6 +40,27 @@ function App() {
   const [feedbackReminderId, setFeedbackReminderId] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
 
+  // ─── Session management ──────────────────────────────────
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ─── Auth header helper ──────────────────────────────────
+  const authHeaders = useCallback(() => {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`
+    };
+  }, [session]);
+
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
   }, []);
@@ -44,7 +68,9 @@ function App() {
   const fetchHabits = useCallback(async () => {
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_URL}/habits`);
+      const response = await fetch(`${API_URL}/habits`, {
+        headers: authHeaders()
+      });
       const data = await response.json();
       setHabits(data);
       setLoading(false);
@@ -53,51 +79,49 @@ function App() {
       showToast('Failed to load habits', 'error');
       setLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, authHeaders]);
 
   const fetchTodayReminders = useCallback(async () => {
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_URL}/reminders/today`);
+      const response = await fetch(`${API_URL}/reminders/today`, {
+        headers: authHeaders()
+      });
       const data = await response.json();
       setTodayReminders(data);
     } catch (error) {
       console.error('Error fetching reminders:', error);
     }
-  }, []);
+  }, [authHeaders]);
 
   useEffect(() => {
-    fetchHabits();
-    fetchTodayReminders();
-  }, [fetchHabits, fetchTodayReminders]);
+    if (session) {
+      fetchHabits();
+      fetchTodayReminders();
+    }
+  }, [session, fetchHabits, fetchTodayReminders]);
 
   const createHabit = async (e) => {
     e.preventDefault();
-    
     if (!newHabit.name.trim()) {
       showToast('Habit name is required', 'error');
       return;
     }
-
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       const response = await fetch(`${API_URL}/habits`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(newHabit),
       });
-      
       if (!response.ok) throw new Error('Failed to create habit');
-      
       const data = await response.json();
       setHabits([...habits, data]);
-
       await fetch(`${API_URL}/reminders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ habit_id: data.id }),
       });
-      
       fetchTodayReminders();
       setNewHabit({
         name: '',
@@ -108,7 +132,6 @@ function App() {
         frequency_config: [],
         prompt_for_feedback: false
       });
-      
       showToast(`Habit "${data.name}" created! 🎉`, 'success');
     } catch (error) {
       console.error('Error creating habit:', error);
@@ -119,16 +142,14 @@ function App() {
   const markComplete = async (reminderId, habitName, feedback = null) => {
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const body = feedback ? JSON.stringify({ feedback_text: feedback }) : JSON.stringify({});
       await fetch(`${API_URL}/reminders/${reminderId}/complete`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: body,
+        headers: authHeaders(),
+        body: feedback ? JSON.stringify({ feedback_text: feedback }) : JSON.stringify({}),
       });
       fetchTodayReminders();
       showToast(`"${habitName}" completed! ✨`, 'success');
     } catch (error) {
-      console.error('Error marking complete:', error);
       showToast('Failed to mark complete', 'error');
     }
   };
@@ -138,30 +159,26 @@ function App() {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       await fetch(`${API_URL}/reminders/${reminderId}/skip`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
       });
       fetchTodayReminders();
       showToast(`"${habitName}" skipped`, 'success');
     } catch (error) {
-      console.error('Error marking skip:', error);
       showToast('Failed to mark skip', 'error');
     }
   };
 
   const deleteHabit = async (id, habitName) => {
-    if (!window.confirm(`Delete "${habitName}"? This action cannot be undone.`)) {
-      return;
-    }
-
+    if (!window.confirm(`Delete "${habitName}"? This action cannot be undone.`)) return;
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       await fetch(`${API_URL}/habits/${id}`, {
         method: 'DELETE',
+        headers: authHeaders(),
       });
       setHabits(habits.filter(habit => habit.id !== id));
       showToast(`"${habitName}" deleted`, 'success');
     } catch (error) {
-      console.error('Error deleting habit:', error);
       showToast('Failed to delete habit', 'error');
     }
   };
@@ -171,17 +188,32 @@ function App() {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       await fetch(`${API_URL}/habits/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ is_active: !isActive }),
       });
       await fetchHabits();
-      const action = isActive ? 'paused' : 'resumed';
-      showToast(`"${habitName}" ${action}`, 'success');
+      showToast(`"${habitName}" ${isActive ? 'paused' : 'resumed'}`, 'success');
     } catch (error) {
-      console.error('Error toggling pause:', error);
       showToast('Failed to update habit', 'error');
     }
   };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  // ─── Render logic ────────────────────────────────────────
+  if (session === undefined) {
+    return (
+      <div className="App">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <LoginPage />;
+  }
 
   if (selectedHabitId) {
     const habit = habits.find(h => h.id === selectedHabitId);
@@ -190,6 +222,7 @@ function App() {
         habit={habit}
         onBack={() => setSelectedHabitId(null)}
         onHome={() => setSelectedHabitId(null)}
+        session={session}
       />
     );
   }
@@ -201,6 +234,7 @@ function App() {
         habit={habit}
         onBack={() => setViewingFeedbackHabitId(null)}
         onHome={() => setViewingFeedbackHabitId(null)}
+        session={session}
       />
     );
   }
@@ -209,17 +243,20 @@ function App() {
     return (
       <div className="App">
         <h1>Cadence<span>.</span></h1>
-        <div className="loading" aria-busy="true" aria-label="Loading habits">
-          Loading your habits...
-        </div>
+        <div className="loading">Loading your habits...</div>
       </div>
     );
   }
 
   return (
     <div className="App">
-      <h1>Cadence<span>.</span></h1>
-      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>Cadence<span>.</span></h1>
+        <button onClick={handleSignOut} className="btn-secondary" style={{ marginBottom: '32px' }}>
+          Sign Out
+        </button>
+      </div>
+
       {toast && (
         <Toast
           message={toast.message}
@@ -237,7 +274,6 @@ function App() {
             {todayReminders.map((reminder) => {
               const habit = habits.find(h => h.id === reminder.habit_id);
               const showingFeedback = feedbackReminderId === reminder.id;
-              
               return (
                 <li key={reminder.id} className="reminder-item">
                   <div className="reminder-content">
@@ -247,7 +283,6 @@ function App() {
                       <span className="frequency">{habit?.frequency}</span>
                     </div>
                   </div>
-                  
                   {showingFeedback && habit?.prompt_for_feedback && (
                     <div className="feedback-input-container">
                       <textarea
@@ -259,54 +294,16 @@ function App() {
                       />
                     </div>
                   )}
-                  
                   <div className="reminder-actions">
                     {showingFeedback && habit?.prompt_for_feedback ? (
                       <>
-                        <button
-                          onClick={() => {
-                            markComplete(reminder.id, habit?.name, feedbackText);
-                            setFeedbackReminderId(null);
-                            setFeedbackText('');
-                          }}
-                          className="btn-success"
-                          aria-label={`Confirm ${habit?.name} as complete`}
-                        >
-                          ✓ Confirm
-                        </button>
-                        <button
-                          onClick={() => {
-                            setFeedbackReminderId(null);
-                            setFeedbackText('');
-                          }}
-                          className="btn-secondary"
-                          aria-label="Cancel"
-                        >
-                          ✗ Cancel
-                        </button>
+                        <button onClick={() => { markComplete(reminder.id, habit?.name, feedbackText); setFeedbackReminderId(null); setFeedbackText(''); }} className="btn-success">✓ Confirm</button>
+                        <button onClick={() => { setFeedbackReminderId(null); setFeedbackText(''); }} className="btn-secondary">✗ Cancel</button>
                       </>
                     ) : (
                       <>
-                        <button
-                          onClick={() => {
-                            if (habit?.prompt_for_feedback) {
-                              setFeedbackReminderId(reminder.id);
-                            } else {
-                              markComplete(reminder.id, habit?.name);
-                            }
-                          }}
-                          className="btn-success"
-                          aria-label={`Mark ${habit?.name} as complete`}
-                        >
-                          ✓ Done
-                        </button>
-                        <button
-                          onClick={() => markSkip(reminder.id, habit?.name)}
-                          className="btn-danger"
-                          aria-label={`Skip ${habit?.name}`}
-                        >
-                          ✗ Skip
-                        </button>
+                        <button onClick={() => { if (habit?.prompt_for_feedback) { setFeedbackReminderId(reminder.id); } else { markComplete(reminder.id, habit?.name); } }} className="btn-success">✓ Done</button>
+                        <button onClick={() => markSkip(reminder.id, habit?.name)} className="btn-danger">✗ Skip</button>
                       </>
                     )}
                   </div>
@@ -319,95 +316,51 @@ function App() {
 
       <div className="form-section">
         <h2>Create Habit</h2>
-        <form onSubmit={createHabit} aria-label="Create new habit form">
+        <form onSubmit={createHabit}>
           <div className="form-group">
             <label htmlFor="habit-name">Habit Name</label>
-            <input
-              id="habit-name"
-              type="text"
-              placeholder="e.g., Take Vitamins"
-              value={newHabit.name}
-              onChange={(e) => setNewHabit({...newHabit, name: e.target.value})}
-              required
-              aria-required="true"
-            />
+            <input id="habit-name" type="text" placeholder="e.g., Take Vitamins" value={newHabit.name} onChange={(e) => setNewHabit({...newHabit, name: e.target.value})} required />
           </div>
-
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="frequency">Frequency</label>
-              <select
-                id="frequency"
-                value={newHabit.frequency}
-                onChange={(e) => setNewHabit({...newHabit, frequency: e.target.value})}
-              >
+              <select id="frequency" value={newHabit.frequency} onChange={(e) => setNewHabit({...newHabit, frequency: e.target.value})}>
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
               </select>
             </div>
-
             <div className="form-group">
               <label htmlFor="time">Time</label>
-              <input
-                id="time"
-                type="time"
-                value={newHabit.specific_time}
-                onChange={(e) => setNewHabit({...newHabit, specific_time: e.target.value})}
-              />
+              <input id="time" type="time" value={newHabit.specific_time} onChange={(e) => setNewHabit({...newHabit, specific_time: e.target.value})} />
             </div>
           </div>
-
           {newHabit.frequency === 'weekly' && (
             <div className="form-group">
               <label>Days of Week</label>
               <div className="days-selector">
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                   <label key={day} className="day-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={newHabit.frequency_config?.includes(day) || false}
-                      onChange={(e) => {
-                        const days = newHabit.frequency_config || [];
-                        if (e.target.checked) {
-                          setNewHabit({...newHabit, frequency_config: [...days, day]});
-                        } else {
-                          setNewHabit({...newHabit, frequency_config: days.filter(d => d !== day)});
-                        }
-                      }}
-                    />
+                    <input type="checkbox" checked={newHabit.frequency_config?.includes(day) || false} onChange={(e) => {
+                      const days = newHabit.frequency_config || [];
+                      if (e.target.checked) { setNewHabit({...newHabit, frequency_config: [...days, day]}); }
+                      else { setNewHabit({...newHabit, frequency_config: days.filter(d => d !== day)}); }
+                    }} />
                     <span>{day.slice(0, 3)}</span>
                   </label>
                 ))}
               </div>
             </div>
           )}
-
           <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={newHabit.track_stats}
-              onChange={(e) => setNewHabit({
-                ...newHabit, 
-                track_stats: e.target.checked,
-                type: e.target.checked ? 'smart' : 'basic'
-              })}
-            />
+            <input type="checkbox" checked={newHabit.track_stats} onChange={(e) => setNewHabit({...newHabit, track_stats: e.target.checked, type: e.target.checked ? 'smart' : 'basic'})} />
             <span>Track Statistics</span>
           </label>
-
           <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={newHabit.prompt_for_feedback}
-              onChange={(e) => setNewHabit({...newHabit, prompt_for_feedback: e.target.checked})}
-            />
+            <input type="checkbox" checked={newHabit.prompt_for_feedback} onChange={(e) => setNewHabit({...newHabit, prompt_for_feedback: e.target.checked})} />
             <span>Prompt for Feedback</span>
           </label>
-
-          <button type="submit" className="btn-primary">
-            Create Habit
-          </button>
+          <button type="submit" className="btn-primary">Create Habit</button>
         </form>
       </div>
 
@@ -426,53 +379,22 @@ function App() {
                       <div className="habit-content">
                         <strong>{habit.name}</strong>
                         <div className="habit-meta">
-                          <span className="badge">
-                            {habit.type === 'smart' ? '🧠 Smart' : '📌 Basic'}
-                          </span>
+                          <span className="badge">{habit.type === 'smart' ? '🧠 Smart' : '📌 Basic'}</span>
                           <span className="frequency">{habit.frequency.charAt(0).toUpperCase() + habit.frequency.slice(1)}</span>
                           {habit.track_stats && <span className="badge stats">📊 Tracked</span>}
                         </div>
                       </div>
                       <div className="habit-actions">
-                        {habit.track_stats && (
-                          <button
-                            onClick={() => setSelectedHabitId(habit.id)}
-                            className="btn-secondary"
-                            aria-label={`View statistics for ${habit.name}`}
-                          >
-                            📊 Stats
-                          </button>
-                        )}
-                        {habit.prompt_for_feedback && (
-                          <button
-                            onClick={() => setViewingFeedbackHabitId(habit.id)}
-                            className="btn-secondary"
-                            aria-label={`View feedback for ${habit.name}`}
-                          >
-                            📝 Feedback
-                          </button>
-                        )}
-                        <button
-                          onClick={() => togglePauseHabit(habit.id, habit.name, habit.is_active)}
-                          className="btn-secondary"
-                          aria-label={`Pause ${habit.name}`}
-                        >
-                          ⏸️ Pause
-                        </button>
-                        <button
-                          onClick={() => deleteHabit(habit.id, habit.name)}
-                          className="btn-danger"
-                          aria-label={`Delete ${habit.name}`}
-                        >
-                          🗑️ Delete
-                        </button>
+                        {habit.track_stats && <button onClick={() => setSelectedHabitId(habit.id)} className="btn-secondary">📊 Stats</button>}
+                        {habit.prompt_for_feedback && <button onClick={() => setViewingFeedbackHabitId(habit.id)} className="btn-secondary">📝 Feedback</button>}
+                        <button onClick={() => togglePauseHabit(habit.id, habit.name, habit.is_active)} className="btn-secondary">⏸️ Pause</button>
+                        <button onClick={() => deleteHabit(habit.id, habit.name)} className="btn-danger">🗑️ Delete</button>
                       </div>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-
             {habits.filter(h => !h.is_active).length > 0 && (
               <div className="habits-category">
                 <h3>Paused</h3>
@@ -482,38 +404,16 @@ function App() {
                       <div className="habit-content">
                         <strong>{habit.name}</strong>
                         <div className="habit-meta">
-                          <span className="badge">
-                            {habit.type === 'smart' ? '🧠 Smart' : '📌 Basic'}
-                          </span>
+                          <span className="badge">{habit.type === 'smart' ? '🧠 Smart' : '📌 Basic'}</span>
                           <span className="frequency">{habit.frequency.charAt(0).toUpperCase() + habit.frequency.slice(1)}</span>
                           {habit.track_stats && <span className="badge stats">📊 Tracked</span>}
                           <span className="badge inactive">○ Paused</span>
                         </div>
                       </div>
                       <div className="habit-actions">
-                        {habit.track_stats && (
-                          <button
-                            onClick={() => setSelectedHabitId(habit.id)}
-                            className="btn-secondary"
-                            aria-label={`View statistics for ${habit.name}`}
-                          >
-                            📊 Stats
-                          </button>
-                        )}
-                        <button
-                          onClick={() => togglePauseHabit(habit.id, habit.name, habit.is_active)}
-                          className="btn-warning"
-                          aria-label={`Resume ${habit.name}`}
-                        >
-                          ▶️ Resume
-                        </button>
-                        <button
-                          onClick={() => deleteHabit(habit.id, habit.name)}
-                          className="btn-danger"
-                          aria-label={`Delete ${habit.name}`}
-                        >
-                          🗑️ Delete
-                        </button>
+                        {habit.track_stats && <button onClick={() => setSelectedHabitId(habit.id)} className="btn-secondary">📊 Stats</button>}
+                        <button onClick={() => togglePauseHabit(habit.id, habit.name, habit.is_active)} className="btn-warning">▶️ Resume</button>
+                        <button onClick={() => deleteHabit(habit.id, habit.name)} className="btn-danger">🗑️ Delete</button>
                       </div>
                     </li>
                   ))}

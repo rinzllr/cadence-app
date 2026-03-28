@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/StatisticsView.css';
 
-function StatisticsView({ habit, onBack, onHome }) {
+function StatisticsView({ habit, onBack, onHome, session }) {
   const [stats, setStats] = useState(null);
   const [timeframe, setTimeframe] = useState('weekly');
   const [loading, setLoading] = useState(true);
@@ -11,8 +11,9 @@ function StatisticsView({ habit, onBack, onHome }) {
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       const response = await fetch(
-        `${API_URL}/stats/habit/${habit.id}?timeframe=${timeframe}`
-      );
+  `${API_URL}/stats/habit/${habit.id}?timeframe=${timeframe}`,
+  { headers: { 'Authorization': `Bearer ${session?.access_token}` } }
+);
       const data = await response.json();
       setStats(data);
     } catch (error) {

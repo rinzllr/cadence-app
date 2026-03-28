@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/FeedbackView.css';
 
-function FeedbackView({ habit, onBack, onHome }) {
+function FeedbackView({ habit, onBack, onHome, session }) {
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -9,7 +9,10 @@ function FeedbackView({ habit, onBack, onHome }) {
     setLoading(true);
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_URL}/reminders/habit/${habit.id}`);
+const response = await fetch(
+  `${API_URL}/reminders/habit/${habit.id}`,
+  { headers: { 'Authorization': `Bearer ${session?.access_token}` } }
+);
       const data = await response.json();
       // Filter for completed reminders with feedback
       const withFeedback = data.filter(r => r.status === 'completed' && r.feedback_text);
