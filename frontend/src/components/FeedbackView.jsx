@@ -8,7 +8,8 @@ function FeedbackView({ habit, onBack, onHome }) {
   const fetchFeedback = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/reminders/habit/${habit.id}`);
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/reminders/habit/${habit.id}`);
       const data = await response.json();
       // Filter for completed reminders with feedback
       const withFeedback = data.filter(r => r.status === 'completed' && r.feedback_text);

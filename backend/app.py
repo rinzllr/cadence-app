@@ -22,12 +22,7 @@ app = FastAPI()
 # Allow React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://cadence-ixjo2y44n-rinzllrs-projects.vercel.app",
-    "https://*.vercel.app"
-],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -154,7 +149,7 @@ def get_today_reminders(db: Session = Depends(get_db)):
     return reminders
 
 @app.put("/reminders/{reminder_id}/complete", response_model=ReminderInstanceResponse)
-def mark_reminder_complete(reminder_id: int, feedback_text: Optional[str] = None, db: Session = Depends(get_db)):
+def mark_reminder_complete(reminder_id: int, request: FeedbackRequest = None, db: Session = Depends(get_db)):
     """Mark reminder as completed"""
     try:
         from datetime import datetime
@@ -165,10 +160,10 @@ def mark_reminder_complete(reminder_id: int, feedback_text: Optional[str] = None
         
         db_reminder.status = "completed"
         db_reminder.completed_date = datetime.now()
-        if feedback_text:
-            if len(feedback_text.strip()) > 5000:
-                raise HTTPException(status_code=400, detail="Feedback must be less than 5000 characters")
-            db_reminder.feedback_text = feedback_text
+        if request and request.feedback_text:
+        if len(request.feedback_text.strip()) > 5000:
+        raise HTTPException(status_code=400, detail="Feedback must be less than 5000 characters")
+    db_reminder.feedback_text = request.feedback_text
         
         db.add(db_reminder)
         db.commit()
