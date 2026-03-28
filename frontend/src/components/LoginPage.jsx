@@ -3,7 +3,7 @@ import { supabase } from '../supabase';
 import '../styles/LoginPage.css';
 
 function LoginPage() {
-  const [mode, setMode] = useState('login'); // 'login' or 'signup'
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,7 +27,13 @@ function LoginPage() {
       if (mode === 'signup') {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage('Check your email to confirm your account.');
+        setMessage('Account created! You can now sign in.');
+      } else if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setMessage('Check your email for a password reset link.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -45,20 +51,28 @@ function LoginPage() {
         <h1>Cadence<span>.</span></h1>
         <p className="login-tagline">Build habits that stick.</p>
 
-        <div className="login-tabs">
-          <button
-            className={mode === 'login' ? 'tab active' : 'tab'}
-            onClick={() => { setMode('login'); setError(null); setMessage(null); }}
-          >
-            Sign In
-          </button>
-          <button
-            className={mode === 'signup' ? 'tab active' : 'tab'}
-            onClick={() => { setMode('signup'); setError(null); setMessage(null); }}
-          >
-            Sign Up
-          </button>
-        </div>
+        {mode !== 'forgot' && (
+          <div className="login-tabs">
+            <button
+              className={mode === 'login' ? 'tab active' : 'tab'}
+              onClick={() => { setMode('login'); setError(null); setMessage(null); }}
+            >
+              Sign In
+            </button>
+            <button
+              className={mode === 'signup' ? 'tab active' : 'tab'}
+              onClick={() => { setMode('signup'); setError(null); setMessage(null); }}
+            >
+              Sign Up
+            </button>
+          </div>
+        )}
+
+        {mode === 'forgot' && (
+          <p className="forgot-back" onClick={() => { setMode('login'); setError(null); setMessage(null); }}>
+            ← Back to sign in
+          </p>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -73,17 +87,19 @@ function LoginPage() {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+          {mode !== 'forgot' && (
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           {mode === 'signup' && (
             <div className="form-group">
@@ -99,11 +115,17 @@ function LoginPage() {
             </div>
           )}
 
+          {mode === 'login' && (
+            <p className="forgot-password" onClick={() => { setMode('forgot'); setError(null); setMessage(null); }}>
+              Forgot password?
+            </p>
+          )}
+
           {error && <p className="auth-error">{error}</p>}
           {message && <p className="auth-message">{message}</p>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
           </button>
         </form>
       </div>

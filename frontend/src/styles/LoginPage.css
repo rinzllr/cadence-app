@@ -79,3 +79,24 @@
   border-radius: var(--r-sm);
   border: 1px solid rgba(0,210,170,0.15);
 }
+
+.forgot-password {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: right;
+  margin-top: -4px;
+  transition: color 0.15s ease;
+}
+
+.forgot-password:hover { color: var(--accent); }
+
+.forgot-back {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: color 0.15s ease;
+}
+
+.forgot-back:hover { color: var(--accent); }
