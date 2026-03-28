@@ -161,9 +161,9 @@ def mark_reminder_complete(reminder_id: int, request: FeedbackRequest = None, db
         db_reminder.status = "completed"
         db_reminder.completed_date = datetime.now()
         if request and request.feedback_text:
-        if len(request.feedback_text.strip()) > 5000:
-        raise HTTPException(status_code=400, detail="Feedback must be less than 5000 characters")
-    db_reminder.feedback_text = request.feedback_text
+            if len(request.feedback_text.strip()) > 5000:
+                raise HTTPException(status_code=400, detail="Feedback must be less than 5000 characters")
+            db_reminder.feedback_text = request.feedback_text
         
         db.add(db_reminder)
         db.commit()
