@@ -18,7 +18,7 @@
 }
 
 .stats-header h2 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Outfit', sans-serif;
   font-size: clamp(1.6rem, 6vw, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -117,7 +117,7 @@
 }
 
 .stat-value {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Outfit', sans-serif;
   font-size: 2.4rem;
   font-weight: 800;
   color: var(--accent);
