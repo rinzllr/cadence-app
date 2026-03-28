@@ -4,6 +4,7 @@ import StatisticsView from './components/StatisticsView';
 import FeedbackView from './components/FeedbackView';
 import LoginPage from './components/LoginPage';
 import { supabase } from './supabase';
+import ResetPassword from './components/ResetPassword';
 
 function Toast({ message, type, onClose }) {
   useEffect(() => {
@@ -214,6 +215,10 @@ function App() {
   if (!session) {
     return <LoginPage />;
   }
+
+  if (window.location.pathname === '/reset-password') {
+  return <ResetPassword />;
+}
 
   if (selectedHabitId) {
     const habit = habits.find(h => h.id === selectedHabitId);
