@@ -1,82 +1,93 @@
+/* FeedbackView.css — inherits tokens from App.css */
+
 .feedback-view {
-  min-height: 100vh;
-  padding: 16px;
-  animation: fadeIn 0.5s ease-out;
+  min-height: 100dvh;
+  padding: 40px 18px 72px;
+  max-width: 520px;
+  margin: 0 auto;
+  animation: fadeUp 0.4s ease both;
 }
 
+/* ─── Header ──────────────────────────────────────────── */
 .feedback-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
+  align-items: flex-start;
   gap: 16px;
+  margin-bottom: 32px;
 }
 
 .feedback-header h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--text);
   margin: 0;
-  font-size: 2rem;
-  color: var(--text-primary);
 }
+
+.feedback-header h2::before { display: none; }
 
 .feedback-buttons {
   display: flex;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 4px;
 }
 
+/* ─── Feedback List ───────────────────────────────────── */
 .feedback-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .feedback-item {
   background: var(--bg-card);
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid var(--border-color);
-  border-left: 4px solid var(--accent-green);
-  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  border-left: 2px solid var(--accent);
+  transition: border-color 0.2s ease;
+  animation: fadeUp 0.35s ease both;
 }
 
-.feedback-item:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
+.feedback-item:hover { border-color: var(--border-hover); }
 
 .feedback-date {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+  font-size: 0.7rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
 }
 
 .feedback-text {
-  font-size: 0.95rem;
-  color: var(--text-primary);
-  line-height: 1.6;
+  font-size: 0.9rem;
+  color: var(--text-sub);
+  line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
+/* ─── Empty State ─────────────────────────────────────── */
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  color: var(--text-secondary);
-  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
-@media (min-width: 768px) {
-  .feedback-view {
-    padding: 32px 24px;
-  }
+/* ─── Responsive ──────────────────────────────────────── */
+@media (min-width: 640px) {
+  .feedback-view { padding: 52px 28px 80px; }
+  .feedback-header h2 { font-size: 2.4rem; }
+}
 
-  .feedback-header {
-    margin-bottom: 40px;
-  }
-
-  .feedback-header h2 {
-    font-size: 2.5rem;
-  }
+@media (max-width: 480px) {
+  .feedback-header { flex-direction: column; align-items: flex-start; }
+  .feedback-buttons { width: 100%; }
+  .feedback-buttons button { flex: 1; }
 }

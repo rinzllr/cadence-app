@@ -208,7 +208,7 @@ function App() {
   if (loading) {
     return (
       <div className="App">
-        <h1>Cadence</h1>
+        <h1>Cadence<span>.</span></h1>
         <div className="loading" aria-busy="true" aria-label="Loading habits">
           Loading your habits...
         </div>
@@ -218,7 +218,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Cadence</h1>
+      <h1>Cadence<span>.</span></h1>
       
       {toast && (
         <Toast
