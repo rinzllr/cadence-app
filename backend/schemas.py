@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, field_validator
 from typing import Optional, List
 from datetime import datetime, date
 from uuid import UUID
+import json
 
 class FeedbackRequest(BaseModel):
     feedback_text: Optional[str] = None
@@ -77,6 +78,16 @@ class HabitResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     prompt_for_feedback: bool
+
+    @field_validator('frequency_config', mode='before')
+    @classmethod
+    def parse_frequency_config(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except:
+                return []
+        return v or []
 
     class Config:
         from_attributes = True
