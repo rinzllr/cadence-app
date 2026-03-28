@@ -80,16 +80,16 @@ class HabitResponse(BaseModel):
     prompt_for_feedback: bool
 
     @field_validator('frequency_config', mode='before')
-@classmethod
-def parse_frequency_config(cls, v):
-    if isinstance(v, str):
-        try:
-            return json.loads(v)
-        except:
+    @classmethod
+    def parse_frequency_config(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except:
+                return []
+        if isinstance(v, dict):
             return []
-    if isinstance(v, dict):
-        return []
-    return v or []
+        return v or []
 
     class Config:
         from_attributes = True
