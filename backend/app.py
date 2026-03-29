@@ -80,8 +80,7 @@ def health_check():
 def create_habit(habit: HabitCreate, db: Session = Depends(get_db), user_id: str = Depends(get_current_user)):
     try:
         habit_data = habit.dict()
-        if habit_data.get("frequency_config"):
-            habit_data["frequency_config"] = json.dumps(habit_data["frequency_config"])
+        habit_data["frequency_config"] = json.dumps(habit_data.get("frequency_config") or [])
         db_habit = Habit(**habit_data, user_id=user_id)
         db.add(db_habit)
         db.commit()
@@ -111,8 +110,8 @@ def update_habit(habit_id: int, habit: HabitUpdate, db: Session = Depends(get_db
             raise HTTPException(status_code=404, detail="Habit not found")
 
         update_data = habit.dict(exclude_unset=True)
-        if "frequency_config" in update_data and update_data["frequency_config"]:
-            update_data["frequency_config"] = json.dumps(update_data["frequency_config"])
+        if "frequency_config" in update_data:
+            update_data["frequency_config"] = json.dumps(update_data.get("frequency_config") or [])
         for key, value in update_data.items():
             setattr(db_habit, key, value)
 
