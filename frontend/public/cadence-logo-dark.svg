@@ -3,8 +3,6 @@
     <style>@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700&amp;display=swap');</style>
   </defs>
 
-  <rect width="380" height="72" fill="#111111"/>
-
   <!-- Back arc: teal -->
   <path
     d="M 12,62 C 15,46 32,28 70,18"
