@@ -22,7 +22,7 @@ function Toast({ message, type, onClose }) {
 }
 
 function App() {
-  const [session, setSession] = useState(undefined); // undefined = loading, null = no session
+  const [session, setSession] = useState(undefined);
   const [habits, setHabits] = useState([]);
   const [todayReminders, setTodayReminders] = useState([]);
   const [newHabit, setNewHabit] = useState({
@@ -41,7 +41,6 @@ function App() {
   const [feedbackReminderId, setFeedbackReminderId] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
 
-  // ─── Session management ──────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -54,7 +53,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ─── Auth header helper ──────────────────────────────────
   const authHeaders = useCallback(() => {
     return {
       'Content-Type': 'application/json',
@@ -141,7 +139,7 @@ function App() {
         frequency_config: [],
         prompt_for_feedback: false
       });
-      showToast(`Habit "${data.name}" created! 🎉`, 'success');
+      showToast(`"${data.name}" added. 🎉`, 'success');
     } catch (error) {
       console.error('Error creating habit:', error);
       showToast('Failed to create habit', 'error');
@@ -157,7 +155,7 @@ function App() {
         body: feedback ? JSON.stringify({ feedback_text: feedback }) : JSON.stringify({}),
       });
       fetchTodayReminders();
-      showToast(`"${habitName}" completed! ✨`, 'success');
+      showToast(`"${habitName}" done. ✨`, 'success');
     } catch (error) {
       showToast('Failed to mark complete', 'error');
     }
@@ -211,7 +209,6 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  // ─── Render logic ────────────────────────────────────────
   if (session === undefined) {
     return (
       <div className="App">
@@ -225,8 +222,8 @@ function App() {
   }
 
   if (window.location.pathname === '/reset-password') {
-  return <ResetPassword />;
-}
+    return <ResetPassword />;
+  }
 
   if (selectedHabitId) {
     const habit = habits.find(h => h.id === selectedHabitId);
@@ -263,12 +260,19 @@ function App() {
 
   return (
     <div className="App">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Cadence<span>.</span></h1>
-        <button onClick={handleSignOut} className="btn-secondary btn-signout">
-  Sign Out
-</button>
-      </div>
+      <div className="app-header">
+  <div className="app-logo">
+    <svg width="36" height="36" viewBox="0 0 100 100">
+      <path d="M 16,80 C 20,62 42,44 82,34" fill="none" stroke="#1DB8A0" strokeWidth="6.5" strokeLinecap="round" opacity="0.5"/>
+      <path d="M 16,74 C 22,52 46,28 82,18" fill="none" stroke="currentColor" strokeWidth="8.5" strokeLinecap="round"/>
+      <circle cx="82" cy="18" r="8" fill="#1DB8A0"/>
+    </svg>
+    <h1>Cadence<span>.</span></h1>
+  </div>
+  <button onClick={handleSignOut} className="btn-secondary btn-signout">
+    Sign Out
+  </button>
+</div>
 
       {toast && (
         <Toast
@@ -281,7 +285,7 @@ function App() {
       <div className="today-section">
         <h2>Today's Habits</h2>
         {todayReminders.length === 0 ? (
-          <p className="empty-state">All habits completed for today! 🎉</p>
+          <p className="empty-state">All done for today. 🎉</p>
         ) : (
           <ul>
             {todayReminders.map((reminder) => {
@@ -299,7 +303,7 @@ function App() {
                   {showingFeedback && habit?.prompt_for_feedback && (
                     <div className="feedback-input-container">
                       <textarea
-                        placeholder="Add a note (optional)..."
+                        placeholder="How did it go? (optional)"
                         value={feedbackText}
                         onChange={(e) => setFeedbackText(e.target.value)}
                         className="feedback-input"
@@ -328,7 +332,7 @@ function App() {
       </div>
 
       <div className="form-section">
-        <h2>Create Habit</h2>
+        <h2>Add a habit</h2>
         <form onSubmit={createHabit}>
           <div className="form-group">
             <label htmlFor="habit-name">Habit Name</label>
@@ -336,7 +340,7 @@ function App() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="frequency">Frequency</label>
+              <label htmlFor="frequency">How often</label>
               <select id="frequency" value={newHabit.frequency} onChange={(e) => setNewHabit({...newHabit, frequency: e.target.value})}>
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
@@ -367,22 +371,20 @@ function App() {
           )}
           <label className="checkbox-label">
             <input type="checkbox" checked={newHabit.track_stats} onChange={(e) => setNewHabit({...newHabit, track_stats: e.target.checked, type: e.target.checked ? 'smart' : 'basic'})} />
-            <span>Track Statistics</span>
+            <span>Show my progress</span>
           </label>
           <label className="checkbox-label">
             <input type="checkbox" checked={newHabit.prompt_for_feedback} onChange={(e) => setNewHabit({...newHabit, prompt_for_feedback: e.target.checked})} />
-            <span>Prompt for Feedback</span>
+            <span>Ask me how it went</span>
           </label>
-          <button type="submit" className="btn-primary">Create Habit</button>
+          <button type="submit" className="btn-primary">Add a habit</button>
         </form>
       </div>
 
       <div className="habits-section">
         <h2>All Habits</h2>
         {habits.length === 0 ? (
-          <p className="empty-state">
-  Welcome to Cadence — create your first habit below to get started. Try something simple like "Take Vitamins" or "Read 10 pages". 🌱
-</p>
+          <p className="empty-state">No habits yet. Add something small to get started.</p>
         ) : (
           <>
             {habits.filter(h => h.is_active).length > 0 && (
@@ -401,7 +403,7 @@ function App() {
                       </div>
                       <div className="habit-actions">
                         {habit.track_stats && <button onClick={() => setSelectedHabitId(habit.id)} className="btn-secondary">📊 Stats</button>}
-                        {habit.prompt_for_feedback && <button onClick={() => setViewingFeedbackHabitId(habit.id)} className="btn-secondary">📝 Feedback</button>}
+                        {habit.prompt_for_feedback && <button onClick={() => setViewingFeedbackHabitId(habit.id)} className="btn-secondary">📝 Notes</button>}
                         <button onClick={() => togglePauseHabit(habit.id, habit.name, habit.is_active)} className="btn-secondary">⏸️ Pause</button>
                         <button onClick={() => deleteHabit(habit.id, habit.name)} className="btn-danger">🗑️ Delete</button>
                       </div>
