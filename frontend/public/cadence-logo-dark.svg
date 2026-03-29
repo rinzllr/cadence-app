@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 72" width="380" height="72">
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700&amp;display=swap');</style>
+  </defs>
+
+  <rect width="380" height="72" fill="#111111"/>
+
+  <!-- Back arc: teal -->
+  <path
+    d="M 12,62 C 15,46 32,28 70,18"
+    fill="none"
+    stroke="#1DB8A0"
+    stroke-width="5"
+    stroke-linecap="round"
+    opacity="0.5"
+  />
+  <!-- Front arc: white -->
+  <path
+    d="M 12,56 C 17,36 36,16 70,8"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="6.5"
+    stroke-linecap="round"
+  />
+  <!-- Teal dot -->
+  <circle cx="70" cy="8" r="6.5" fill="#1DB8A0"/>
+
+  <!-- Wordmark -->
+  <text
+    x="90"
+    y="56"
+    font-family="Outfit, sans-serif"
+    font-weight="700"
+    font-size="48"
+    letter-spacing="-1.5"
+    fill="#FFFFFF"
+  >Cadence</text>
+
+  <!-- Brand period -->
+  <circle cx="380" cy="52" r="6" fill="#1DB8A0"/>
+</svg>

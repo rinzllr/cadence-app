@@ -262,13 +262,11 @@ function App() {
     <div className="App">
       <div className="app-header">
   <div className="app-logo">
-    <svg width="36" height="36" viewBox="0 0 100 100">
-      <path d="M 16,80 C 20,62 42,44 82,34" fill="none" stroke="#1DB8A0" strokeWidth="6.5" strokeLinecap="round" opacity="0.5"/>
-      <path d="M 16,74 C 22,52 46,28 82,18" fill="none" stroke="currentColor" strokeWidth="8.5" strokeLinecap="round"/>
-      <circle cx="82" cy="18" r="8" fill="#1DB8A0"/>
-    </svg>
-    <h1>Cadence<span>.</span></h1>
-  </div>
+  <picture>
+    <source srcSet="/cadence-logo-dark.svg" media="(prefers-color-scheme: dark)" />
+    <img src="/cadence-logo-light.svg" alt="Cadence" height="36" />
+  </picture>
+</div>
   <button onClick={handleSignOut} className="btn-secondary btn-signout">
     Sign Out
   </button>

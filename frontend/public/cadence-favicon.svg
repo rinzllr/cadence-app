@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#111111"/>
+
+  <!-- Back arc: teal -->
+  <path
+    d="M 5,26 C 7,20 14,14 27,11"
+    fill="none"
+    stroke="#1DB8A0"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    opacity="0.55"
+  />
+
+  <!-- Front arc: white -->
+  <path
+    d="M 5,23 C 8,16 16,9 27,7"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="2.8"
+    stroke-linecap="round"
+  />
+
+  <!-- Teal dot -->
+  <circle cx="27" cy="7" r="3" fill="#1DB8A0"/>
+</svg>
