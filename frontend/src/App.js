@@ -372,7 +372,9 @@ function App() {
       <div className="habits-section">
         <h2>All Habits</h2>
         {habits.length === 0 ? (
-          <p className="empty-state">No habits yet. Create one to get started! 🚀</p>
+          <p className="empty-state">
+  Welcome to Cadence — create your first habit below to get started. Try something simple like "Take Vitamins" or "Read 10 pages". 🌱
+</p>
         ) : (
           <>
             {habits.filter(h => h.is_active).length > 0 && (
