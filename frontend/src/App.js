@@ -250,13 +250,16 @@ function App() {
   }
 
   if (loading) {
-    return (
-      <div className="App">
-        <h1>Cadence<span>.</span></h1>
-        <div className="loading">Loading your habits...</div>
-      </div>
-    );
-  }
+  return (
+    <div className="App">
+      <picture>
+        <source srcSet="/cadence-logo-dark.svg" media="(prefers-color-scheme: dark)" />
+        <img src="/cadence-logo-light.svg" alt="Cadence" height="36" />
+      </picture>
+      <div className="loading">Loading your habits...</div>
+    </div>
+  );
+}
 
   return (
     <div className="App">
