@@ -211,6 +211,32 @@ def mark_reminder_skip(reminder_id: int, db: Session = Depends(get_db), user_id:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Failed to mark reminder skipped: {str(e)}")
 
+@app.post("/reminders/process-missed")
+def process_missed_reminders(db: Session = Depends(get_db), user_id: str = Depends(get_current_user)):
+    """Auto-mark or delete pending reminders from previous days"""
+    try:
+        today = date.today()
+        
+        # Get all pending reminders from previous days for this user's habits
+        old_reminders = db.query(ReminderInstance).join(Habit).filter(
+            ReminderInstance.scheduled_date < today,
+            ReminderInstance.status == "pending",
+            Habit.user_id == user_id
+        ).all()
+        
+        for reminder in old_reminders:
+            habit = db.query(Habit).filter(Habit.id == reminder.habit_id).first()
+            if habit and habit.track_stats:
+                reminder.status = "missed"
+            else:
+                db.delete(reminder)
+        
+        db.commit()
+        return {"processed": len(old_reminders)}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to process missed reminders: {str(e)}")
+
 # ─── Stats ─────────────────────────────────────────────────
 @app.get("/stats/habit/{habit_id}")
 def get_habit_statistics(habit_id: int, timeframe: str = "weekly", db: Session = Depends(get_db), user_id: str = Depends(get_current_user)):

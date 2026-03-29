@@ -97,10 +97,18 @@ function App() {
 
   useEffect(() => {
     if (session) {
-      fetchHabits();
-      fetchTodayReminders();
+      const initialize = async () => {
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        await fetch(`${API_URL}/reminders/process-missed`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        await fetchHabits();
+        await fetchTodayReminders();
+      };
+      initialize();
     }
-  }, [session, fetchHabits, fetchTodayReminders]);
+  }, [session, fetchHabits, fetchTodayReminders, authHeaders]);
 
   const createHabit = async (e) => {
     e.preventDefault();
