@@ -257,9 +257,9 @@ function App() {
     <div className="App">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Cadence<span>.</span></h1>
-        <button onClick={handleSignOut} className="btn-secondary" style={{ marginBottom: '32px' }}>
-          Sign Out
-        </button>
+        <button onClick={handleSignOut} className="btn-secondary btn-signout">
+  Sign Out
+</button>
       </div>
 
       {toast && (
