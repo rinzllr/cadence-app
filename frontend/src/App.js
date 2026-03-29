@@ -280,7 +280,7 @@ function App() {
               const habit = habits.find(h => h.id === reminder.habit_id);
               const showingFeedback = feedbackReminderId === reminder.id;
               return (
-                <li key={reminder.id} className="reminder-item">
+                <li key={reminder.id} className={`reminder-item ${showingFeedback ? 'feedback-active' : ''}`}>
                   <div className="reminder-content">
                     <strong>{habit?.name}</strong>
                     <div className="reminder-meta">
