@@ -48,8 +48,11 @@ function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>Cadence<span>.</span></h1>
-        <p className="login-tagline">Build habits that stick.</p>
+        <picture>
+  <source srcSet="/cadence-logo-dark.svg" media="(prefers-color-scheme: dark)" />
+  <img src="/cadence-logo-light.svg" alt="Cadence" className="login-logo" />
+</picture>
+<p className="login-tagline">No subscription. No noise. Just habits.</p>
 
         {mode !== 'forgot' && (
           <div className="login-tabs">
